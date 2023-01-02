@@ -2,6 +2,7 @@
 import './App.css';
 import Movies from './component/movies';
 
+
 function App() {
   return (
    
