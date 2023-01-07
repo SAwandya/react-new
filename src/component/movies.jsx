@@ -1,15 +1,28 @@
 import React, { Component } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { getMovies } from '../servieces/fakeMovieService';
+import { getGenres } from '../servieces/fakeGenreService';
 import Pagination from './pagination';
 import { paginate } from '../utils/paginate';
+import ListGroup from './listGroup';
+import MoviesTable from './moviesTable';
+import _ from 'lodash';
 
 class Movies extends Component {
     state = { 
 
-        movies : getMovies(),
+        movies : [],
+        genres: [],
         pagesize: 4,
-        curruntPage: 1
+        curruntPage: 1,
+        sortColomn: { path: 'title', order: 'asc'}
+     }
+
+     componentDidMount() {
+        const genres = [{_id: "", name: 'All genres'}, ...getGenres()]; 
+
+        this.setState({movies: getMovies(), genres});
+
      }
      
     handleDelete = (movie) => {
@@ -24,50 +37,54 @@ class Movies extends Component {
 
     }
     
+    handleGenreSelect = (genre) => {
+
+        this.setState({selectedGenre: genre, curruntPage: 1})
+    }
+
+    handleSort = sortColomn => {   
+       
+        this.setState({ sortColomn });
+    }
 
     render() { 
         
         const {length: count} = this.state.movies;
-        const {pagesize, curruntPage, movies: allMovies} = this.state;
+        const {pagesize, curruntPage, movies: allMovies, selectedGenre, sortColomn} = this.state;
 
         if(count === 0) 
             return <h1>There are no movies</h1>
 
-        const movies = paginate(allMovies, curruntPage, pagesize);
+        const filtered = selectedGenre && selectedGenre._id? allMovies.filter(m => m.genre._id === selectedGenre._id) : allMovies;
+
+        const sorted = _.orderBy(filtered, [sortColomn.path], [sortColomn.order]);
+
+        const movies = paginate(sorted, curruntPage, pagesize);
 
         return (
-            <React.Fragment>
-
-            <p>showing {count} movies</p>
-            
-            <table className="table">
-                <thead>
-                    <tr>
-                        <td>Title</td>
-                        <td>Genre</td>
-                        <td>Stock</td>
-                        <td>Rate</td>
-                        <td>Delete</td>
-                    </tr>
-                </thead>
-                <tbody>
-                    {movies.map(movie => (
-
-                        <tr key={movie._id}>
-                            <td>{movie.title}</td>
-                            <td>{movie.genre.name}</td>
-                            <td>{movie.numberInStock}</td>
-                            <td>{movie.dailyRentalRate}</td>
-                            <td><button onClick={() => this.handleDelete(movie)} type="button" className="btn btn-danger">Danger</button></td>
-                        </tr>
-
-                    ))}
+            <div className="row">
+                <div className="col-3">
+                    <ListGroup 
+                        onItemSelect={this.handleGenreSelect} 
+                        items={this.state.genres}
+                        selectedItem={this.state.selectedGenre} 
+                        />
+                </div>
+                <div className="col">
+                    <p>showing {count} movies</p>
+                    <MoviesTable 
+                    movies={movies} 
+                    onDelete={this.handleDelete}
+                    onSort={this.handleSort}
+                    sortColomn={sortColomn}
+                    />
                     
-                </tbody>
+                <Pagination itemCount={filtered.length} pageSize={pagesize} onPageChange={this.handlePageChange} curruntPage={curruntPage}/>
 
-            </table>
-            <Pagination itemCount={count} pageSize={pagesize} onPageChange={this.handlePageChange} curruntPage={curruntPage}/>
-            </React.Fragment>
+                </div>
+
+            
+            </div>
         )
     }
 }
