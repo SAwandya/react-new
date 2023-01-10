@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import Input from './input';
+import joi from 'joi-browser';
 
 class LogingForm extends Component {
 
@@ -8,20 +9,53 @@ class LogingForm extends Component {
 
         errors: {}
     };
+    
+    schema = {
+        username: joi.string().required().label("Username"),    //label use for display ower own word
+        password: joi.string().required().label("Password")
+    }
+
 
     validate = () => {
+        const option = { abortEarly: false };
+        const { error } = joi.validate(this.state.account, this.schema, option);
+
+        if(!error) return null;
+
         const errors = {};
+        for (let item of error.details)
+            errors[item.path[0]] = item.message;
+        return errors;
 
-        const { account } = this.state;
+        // console.log(result);
+        // const errors = {};
 
-        if(account.username.trim() === '')
-            errors.username = 'Username is required';
-        if(account.password.trim() === '')
-            errors.password = 'Password is required';
+        // const { account } = this.state;
 
-        return Object.keys(errors).length === 0 ? null : errors;
+        // if(account.username.trim() === '')
+        //     errors.username = 'Username is required';
+        // if(account.password.trim() === '')
+        //     errors.password = 'Password is required';
 
-    }; 
+        // return Object.keys(errors).length === 0 ? null : errors;
+
+    };
+    
+    validateProperty = ({ name, value }) => {
+        // if (name === "username") {
+        //     if (value.trim() === "") return "Username is required";
+        //     //...
+        // }
+        // if (name === "password") {
+        //     if (value.trim() === "") return "Password is required";
+        //     //...
+        // }
+
+         const obj = { [name]: value};
+         const schema = { [name]: this.schema[name] };
+         const { error } = joi.validate(obj, schema);
+         return error ? error.details[0].message : null; 
+    };
 
     handleSubmite = e => {
         e.preventDefault();
@@ -41,17 +75,7 @@ class LogingForm extends Component {
         this.setState({ account, errors });
     };
 
-    validateProperty = ({ name, value }) => {
-        if (name === "username") {
-            if (value.trim() === "") return "Username is required";
-            //...
-        }
-        if (name === "password") {
-            if (value.trim() === "") return "Password is required";
-            //...
-        }
-
-    };
+    
     
     render() { 
 
@@ -75,7 +99,7 @@ class LogingForm extends Component {
                         error={errors.password}
 
                     />
-                        <button className="btn btn-primary">Loging</button>
+                        <button disabled={this.validate()} className="btn btn-primary">Loging</button>
                 </form>    
                 
             </div>
